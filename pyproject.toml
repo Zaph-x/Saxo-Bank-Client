@@ -1,0 +1,28 @@
+[project]
+name = "saxobank-connector"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1.0",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+    "websockets>=14.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "ruff>=0.9.4",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --import-mode=importlib"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+
+
