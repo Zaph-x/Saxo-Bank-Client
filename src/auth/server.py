@@ -12,6 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
