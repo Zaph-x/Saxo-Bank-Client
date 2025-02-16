@@ -28,6 +28,7 @@ class JsonModelBase(ABC):
                     json_data,
                 ),
             )
+
         return cls(
             **humps.decamelize(
                 json.loads(json_data),
@@ -41,8 +42,9 @@ class JsonModelBase(ABC):
                 json_str,
                 cls.__schema__,
             )
-        else:
-            jsonschema.validate(
-                json.loads(json_str),
-                cls.__schema__,
-            )
+            return
+
+        jsonschema.validate(
+            json.loads(json_str),
+            cls.__schema__,
+        )

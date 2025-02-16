@@ -1,5 +1,6 @@
 from models.json_model_base import JsonModelBase
 
+
 class PlaceRelatedOrOcoOrderModel(JsonModelBase):
     __schema__ = {
         "$schema": "http://json-schema.org/draft-04/schema#",
@@ -11,4 +12,3 @@ class PlaceRelatedOrOcoOrderModel(JsonModelBase):
         },
         "required": ["AlgorithmicOrderData", "RelatedOrOcoOrder"],
     }
-

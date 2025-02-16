@@ -1,5 +1,6 @@
 from models.json_model_base import JsonModelBase
 
+
 class RelatedOrOcoOrderModel(JsonModelBase):
     __schema__ = {
         "$schema": "http://json-schema.org/draft-04/schema#",
@@ -16,5 +17,3 @@ class RelatedOrOcoOrderModel(JsonModelBase):
         order_id: str,
     ) -> None:
         self.order_id = order_id
-
-
