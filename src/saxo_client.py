@@ -115,7 +115,9 @@ class SaxoClient:
         self.session.headers.update({"Authorization": "Bearer " + token_data.access_token})
         self.refresh_token = token_data.refresh_token
         logger.debug("Starting timer for " + str(token_data.expires_in) + " seconds")
-        self.refrehs_thread = threading.Timer(token_data.expires_in - 20, self._periodic_refresh, [token_data.expires_in - 10])
+        self.refrehs_thread = threading.Timer(
+            token_data.expires_in - 20, self._periodic_refresh, [token_data.expires_in - 10]
+        )
         self.refrehs_thread.start()
         logger.info("Authenticated")
 
