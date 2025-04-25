@@ -1,4 +1,4 @@
-from models.json_model_base import JsonModelBase
+from data_models.json_model_base import JsonModelBase
 
 
 class AppConfig(JsonModelBase):

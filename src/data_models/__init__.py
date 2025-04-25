@@ -1,5 +1,4 @@
-from models.token_data import TokenDataModel
-from models.app_config import AppConfig
-from models.user_model import UserModel
+from data_models.token_data import TokenDataModel
+from data_models.app_config import AppConfig
 
-__all__ = ["TokenDataModel", "AppConfig", "UserModel"]
+__all__ = ["TokenDataModel", "AppConfig"]

@@ -1,6 +1,5 @@
 import websocket
 import json
-import asyncio
 
 
 class SaxoWebsocketConnector:

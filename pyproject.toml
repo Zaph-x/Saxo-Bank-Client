@@ -8,13 +8,16 @@ dependencies = [
     "flask>=3.1.0",
     "jsonschema>=4.23.0",
     "pyhumps>=3.8.0",
+    "python-dateutil>=2.9.0.post0",
     "python-dotenv>=1.0.1",
+    "redis[hiredis]>=5.2.1",
     "requests>=2.32.3",
     "websockets>=14.2",
 ]
 
 [dependency-groups]
 dev = [
+    "pdbpp>=0.11.6",
     "pytest>=8.3.4",
     "ruff>=0.9.4",
 ]
@@ -27,4 +30,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 120
 
+[tool.pyright]
+include = ["src"]
+exclude = ["tests"]
 
