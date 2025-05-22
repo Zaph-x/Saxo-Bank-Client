@@ -4,7 +4,7 @@ This server is a simple HTTP server that listens on a configurable port (Default
 The server starts its own thread and runs in the background.
 """
 
-from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from threading import Thread
 from urllib.parse import urlparse, parse_qs

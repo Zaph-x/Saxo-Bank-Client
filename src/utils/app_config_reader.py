@@ -1,4 +1,4 @@
-from data_models.app_config import AppConfig
+from data_models.saxo.app_config import AppConfig
 
 
 def read_app_config(file_path: str = "saxoapp.json") -> AppConfig:

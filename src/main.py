@@ -1,15 +1,13 @@
-from utils.app_config_reader import read_app_config
-from data_models.token_data import TokenDataModel
 from objects.client_configuration import ClientConfiguration
-from saxo_client import SaxoClient
-from redis import StrictRedis
 import argparse
 import logging
+from flask import Flask
+from container import Container
+from urls import register_blueprints
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Saxo API Client")
-    parser.add_argument("--config", type=str, help="Path to configuration file", default="saxoapp.json")
     parser.add_argument(
         "--loglevel",
         type=str,
@@ -26,7 +24,7 @@ def parse_args():
         "--redis-host",
         type=str,
         help="Redis host. This overrides the config file setting and will fetch the token data from Redis.",
-        default=""
+        default="localhost",
     )
     parser.add_argument(
         "--redis-port",
@@ -34,7 +32,26 @@ def parse_args():
         help="Redis port.",
         default=6379,
     )
+    parser.add_argument(
+        "--redis-db",
+        type=int,
+        help="Redis database number.",
+        default=0,
+    )
     return parser.parse_args()
+
+
+def create_app():
+    """Create a Flask application."""
+    container = Container()
+    container.init_resources()
+    container.wire(modules=["routes.trade"])
+    app = Flask(__name__)
+    app.url_map.strict_slashes = False
+    app.container = container  # pyright: ignore[reportAttributeAccessIssue]
+
+    register_blueprints(app)
+    return app
 
 
 if __name__ == "__main__":
@@ -44,21 +61,20 @@ if __name__ == "__main__":
     client_config = ClientConfiguration(
         redis_host=args.redis_host,
         redis_port=args.redis_port,
-        config_file=args.config,
+        redis_db=args.redis_db,
     )
-    _state = None
-    _token_data = None
 
-    r = StrictRedis(host=args.redis_host, port=args.redis_port, db=0, decode_responses=True, encoding="utf-8")
+    if args.interactive:
+        from saxo_client import SaxoClient
+        from redis import StrictRedis
 
-    if not r.ping():
-        logging.error("Could not connect to Redis server. Exiting.")
-        exit(1)
-
-    saxo_client = SaxoClient(r, interactive=args.interactive)
-    
-
-    user = saxo_client.user
-
-    if saxo_client.interactive:
+        client = SaxoClient(
+            StrictRedis(
+                host=args.redis_host, port=args.redis_port, db=args.redis_db, decode_responses=True, encoding="utf-8"
+            )
+        )
         breakpoint()
+
+    app = create_app()
+
+    app.run(debug=args.loglevel.upper() == "DEBUG")

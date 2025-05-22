@@ -1,5 +1,5 @@
 from data_models.json_model_base import JsonModelBase
-
+from typing import Optional
 
 class PlaceRelatedOrOcoOrderModel(JsonModelBase):
     __schema__ = {
@@ -14,10 +14,9 @@ class PlaceRelatedOrOcoOrderModel(JsonModelBase):
             "OrderDuration": {"type": "object", "properties": {"OrderDurationType": {"type": "string", "enum": []}}},
             "OrderType": {"type": "string"},
             "OrderPrice": {"type": "number"},
-            "Uid": {"type": "number"},
+            "Uic": {"type": "number"},
             "AmountType": {"type": ["string", "null"], "enum": ["Quantity", "CashAmount"]},
         },
-        "required": ["AccountKey", "Amount", "AssetType", "BuySell", "OrderDuration", "OrderType", "Uid"],
     }
 
     def __init__(
@@ -26,10 +25,10 @@ class PlaceRelatedOrOcoOrderModel(JsonModelBase):
         Amount: float,
         AssetType: str,
         BuySell: str,
-        OrderDuration: dict,
         OrderType: str,
         OrderPrice: float,
-        Uid: int,
+        Uic: int,
+        OrderDuration: Optional[dict] = None,
         AmountType: str = "Quantity",
     ):
         """
@@ -52,4 +51,4 @@ class PlaceRelatedOrOcoOrderModel(JsonModelBase):
         self.OrderDuration = OrderDuration
         self.OrderType = OrderType
         self.OrderPrice = OrderPrice
-        self.Uid = Uid
+        self.Uic = Uic

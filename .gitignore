@@ -10,3 +10,5 @@ saxoapp.json
 
 # Virtual environments
 .venv
+
+tsl.json

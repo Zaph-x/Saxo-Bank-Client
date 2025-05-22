@@ -1,7 +1,7 @@
 from abc import ABC
 import json
 import jsonschema
-import humps
+from humps import camelize, decamelize
 
 
 class JsonModelBase(ABC):
@@ -13,7 +13,7 @@ class JsonModelBase(ABC):
             if isinstance(value, JsonModelBase):
                 __dict[key] = __dict[key].to_json()
         return json.dumps(
-            humps.camelize(
+            camelize(
                 __dict,
             ),
         )
@@ -24,13 +24,13 @@ class JsonModelBase(ABC):
 
         if isinstance(json_data, dict):
             return cls(
-                **humps.decamelize(
+                **decamelize(
                     json_data,
                 ),
             )
 
         return cls(
-            **humps.decamelize(
+            **decamelize(
                 json.loads(json_data),
             ),
         )

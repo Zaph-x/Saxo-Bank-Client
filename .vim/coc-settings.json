@@ -1,0 +1,8 @@
+{
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.extraPaths": [
+        "src"
+    ],
+    "python.venvPath": "./.venv",
+    "python.analysis.diagnosticMode": "workspace"
+}
