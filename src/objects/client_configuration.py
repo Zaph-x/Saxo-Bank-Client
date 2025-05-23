@@ -1,8 +1,8 @@
-class ClientConfiguration:
-    redis_host: str = "localhost"
-    redis_port: int = 6379
-    redis_db: int = 0
+import logging
 
+logger = logging.getLogger(__name__)
+
+class ClientConfiguration:
     def __init__(self, redis_host: str, redis_port: int, redis_db: int = 0):
         """
         Initialize the ClientConfiguration with Redis settings.
@@ -24,6 +24,7 @@ class ClientConfiguration:
         Args:
             host (str): The new Redis host.
         """
+        logger.debug(f"Setting Redis host to {host}")
         ClientConfiguration.redis_host = host
 
     @staticmethod
@@ -34,6 +35,7 @@ class ClientConfiguration:
         Args:
             port (int): The new Redis port.
         """
+        logger.debug(f"Setting Redis port to {port}")
         ClientConfiguration.redis_port = port
 
     @staticmethod
@@ -44,6 +46,7 @@ class ClientConfiguration:
         Args:
             db (int): The new Redis database number.
         """
+        logger.debug(f"Setting Redis database to {db}")
         ClientConfiguration.redis_db = db
 
     @staticmethod
@@ -54,6 +57,7 @@ class ClientConfiguration:
         Returns:
             str: The Redis host.
         """
+        logger.debug(f"Redis host: {ClientConfiguration.redis_host}")
         return ClientConfiguration.redis_host
 
     @staticmethod
@@ -64,6 +68,7 @@ class ClientConfiguration:
         Returns:
             int: The Redis port.
         """
+        logger.debug(f"Redis port: {ClientConfiguration.redis_port}")
         return ClientConfiguration.redis_port
 
     @staticmethod
@@ -74,4 +79,14 @@ class ClientConfiguration:
         Returns:
             int: The Redis database number.
         """
+        logger.debug(f"Redis database: {ClientConfiguration.redis_db}")
         return ClientConfiguration.redis_db
+
+    def __repr__(self):
+        """
+        Return a string representation of the ClientConfiguration.
+
+        Returns:
+            str: A string representation of the ClientConfiguration.
+        """
+        return f"ClientConfiguration(redis_host={self.redis_host}, redis_port={self.redis_port}, redis_db={self.redis_db})"

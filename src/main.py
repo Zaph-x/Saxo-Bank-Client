@@ -2,9 +2,8 @@ from objects.client_configuration import ClientConfiguration
 import argparse
 import logging
 from flask import Flask
-from container import Container
-from urls import register_blueprints
 
+logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Saxo API Client")
@@ -24,7 +23,7 @@ def parse_args():
         "--redis-host",
         type=str,
         help="Redis host. This overrides the config file setting and will fetch the token data from Redis.",
-        default="localhost",
+        default="redis",
     )
     parser.add_argument(
         "--redis-port",
@@ -43,13 +42,18 @@ def parse_args():
 
 def create_app():
     """Create a Flask application."""
+    from container import Container
+    from urls import register_blueprints
     container = Container()
     container.init_resources()
-    container.wire(modules=["routes.trade"])
+    container.wire(modules=["routes.trade", "routes.account"])
+    logger.debug("Wired container with routes")
+    logger.debug(f"Container: {container}")
     app = Flask(__name__)
     app.url_map.strict_slashes = False
     app.container = container  # pyright: ignore[reportAttributeAccessIssue]
 
+    logger.info("Initialized container resources")
     register_blueprints(app)
     return app
 
@@ -58,11 +62,11 @@ if __name__ == "__main__":
     args = parse_args()
     logging.basicConfig(level=args.loglevel.upper())
 
-    client_config = ClientConfiguration(
-        redis_host=args.redis_host,
-        redis_port=args.redis_port,
-        redis_db=args.redis_db,
-    )
+    ClientConfiguration.set_redis_host(args.redis_host)
+    ClientConfiguration.set_redis_port(args.redis_port)
+    ClientConfiguration.set_redis_db(args.redis_db)
+    logger.debug("Client configuration set from command line arguments")
+    
 
     if args.interactive:
         from saxo_client import SaxoClient
@@ -77,4 +81,4 @@ if __name__ == "__main__":
 
     app = create_app()
 
-    app.run(debug=args.loglevel.upper() == "DEBUG")
+    app.run(debug=args.loglevel.upper() == "DEBUG", host="0.0.0.0", port=5000)

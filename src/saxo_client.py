@@ -27,6 +27,8 @@ class SaxoClient:
         self.session = requests.Session()
         self.interactive = interactive
         channel = self.redis.pubsub()
+        logger.debug(f"Redis channel: {self.redis_channel}")
+        logger.debug(f"Redis host: {self.redis.connection_pool.connection_kwargs['host']}")
         channel.subscribe(self.redis_channel)
         self.redis_thread = threading.Thread(target=self._listen_for_token, args=(channel,))
         self.redis_thread.daemon = True
@@ -57,7 +59,7 @@ class SaxoClient:
         """
         self.access_token = token
         self.session.headers.update({"Authorization": f"Bearer {self.access_token}"})
-        logger.debug(f"Access token set: {self.access_token}")
+        logger.debug(f"Access token set: {self.access_token[:10]}...")
 
     def _listen_for_token(self: "SaxoClient", channel) -> None:
         """This method listens for the access token from Redis.
@@ -68,8 +70,8 @@ class SaxoClient:
         """
         for message in channel.listen():
             if message["type"] == "message":
-                self.access_token = message["data"]
-                logger.debug(f"Received access token: {self.access_token}")
+                self.access_token = str(message["data"])
+                logger.debug(f"Received access token: {self.access_token[:10]}...")
                 self.session.headers.update({"Authorization": f"Bearer {self.access_token}"})
                 break
 
