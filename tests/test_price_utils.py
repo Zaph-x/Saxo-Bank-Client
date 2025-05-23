@@ -1,14 +1,14 @@
 from utils.price import calculate_stop_loss, calculate_take_profit
 import math
 from data_models.trade_payload import MarketOrderTradePayload, StopLossTakeProfitPayload
-from objects.stop_loss import StopLoss
-from objects.take_profit import TakeProfit
-from objects.asset_type import AssetType
+from data_models.trading.stop_loss import StopLoss
+from data_models.trading.take_profit import TakeProfit
+from data_models.trading.asset_type import AssetType
 import pytest
 import json
 
-from data_models.price_info import PriceInfo
-from objects.price_type import PriceType
+from data_models.price.price_info import PriceInfo
+from data_models.price.price_type import PriceType
 
 
 def create_price_info(bid, ask):

@@ -1,4 +1,4 @@
-from data_models.place_related_or_oco_order import PlaceRelatedOrOcoOrderModel
+from data_models.saxo.place_related_or_oco_order import PlaceRelatedOrOcoOrderModel
 
 
 def test_can_deserialise_related_or_oco_oder_without_order_duration():

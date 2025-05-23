@@ -1,7 +1,7 @@
 import pytest
 
 from data_models.trade_payload import MarketOrderTradePayload, LimitOrderTradePayload
-from objects.price_type import PriceType
+from data_models.price.price_type import PriceType
 import json
 from jsonschema.exceptions import ValidationError
 
