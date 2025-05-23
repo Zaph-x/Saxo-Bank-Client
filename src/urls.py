@@ -1,12 +1,15 @@
 from flask import Blueprint
 from routes import trade
+from routes import account
 
 trade_bp = Blueprint("trade", __name__, url_prefix="/trade")
-trade_bp.add_url_rule("/market_order", view_func=trade.create_market_order, methods=["POST", "GET", "OPTIONS"])  # type: ignore
+trade_bp.add_url_rule("/market_order", view_func=trade.create_market_order, methods=["POST", "GET", "INFO", "OPTIONS"])  # type: ignore
 
 position_bp = Blueprint("position", __name__, url_prefix="/position")
 
 account_bp = Blueprint("account", __name__, url_prefix="/account")
+account_bp.add_url_rule("/balance", view_func=account.get_balance, methods=["GET", "OPTIONS"])  # type: ignore
+account_bp.add_url_rule("/positions", view_func=account.get_positions, methods=["GET", "OPTIONS"])  # type: ignore
 
 
 def register_blueprints(app):

@@ -36,6 +36,8 @@ class TradeHandler(HandlerBase):
         response = self.session.post(url, json=order_payload)
         if not response.ok:
             raise Exception(f"Failed to place order: {response.status_code} {response.json()}")
+        if response.ok:
+            logger.debug(f"Order placed successfully: {response.json()}")
         return response.json()
 
     def place_market_order(
@@ -57,7 +59,6 @@ class TradeHandler(HandlerBase):
             asset_type=AssetType(market_order_payload.asset_type),
         )
         price_info = self.get_price_for_assets([uic], AssetType(market_order_payload.asset_type))[0]
-        logger.info(f"Placing market order for {market_order_payload.quantity} units of {uic} at market price.")
 
         stop_loss_order_payload = self.create_order_payload(
             uic=uic,
@@ -93,6 +94,7 @@ class TradeHandler(HandlerBase):
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
         )
 
+        logger.info(f"Placing market order for {market_order_payload.quantity} units of {uic} at market price.")
         return self._place_order(order_payload)
 
     def _get_order_duration(
