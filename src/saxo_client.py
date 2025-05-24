@@ -7,6 +7,7 @@ from handlers.account_handler import AccountHandler
 from handlers.trade_handler import TradeHandler
 from data_models.response_models import UserModel
 from redis import Redis
+from redis.client import PubSub
 import threading
 
 logger = logging.getLogger(__name__)
@@ -26,11 +27,11 @@ class SaxoClient:
         self.redis = redis
         self.session = requests.Session()
         self.interactive = interactive
-        channel = self.redis.pubsub()
+        self.channel = self.redis.pubsub()
         logger.debug(f"Redis channel: {self.redis_channel}")
         logger.debug(f"Redis host: {self.redis.connection_pool.connection_kwargs['host']}")
-        channel.subscribe(self.redis_channel)
-        self.redis_thread = threading.Thread(target=self._listen_for_token, args=(channel,))
+        self.channel.subscribe(self.redis_channel)
+        self.redis_thread = threading.Thread(target=self._listen_for_token, args=(self.channel,))
         self.redis_thread.daemon = True
         self.redis_thread.start()
         self.set_token(str(redis.get(self.redis_channel)))
@@ -59,9 +60,9 @@ class SaxoClient:
         """
         self.access_token = token
         self.session.headers.update({"Authorization": f"Bearer {self.access_token}"})
-        logger.debug(f"Access token set: {self.access_token[:10]}...")
+        logger.debug(f"Access token set: {self.access_token[:10]}...{self.access_token[-10:]}")
 
-    def _listen_for_token(self: "SaxoClient", channel) -> None:
+    def _listen_for_token(self: "SaxoClient", channel: PubSub) -> None:
         """This method listens for the access token from Redis.
         It should be called in a separate thread.
 
@@ -71,9 +72,8 @@ class SaxoClient:
         for message in channel.listen():
             if message["type"] == "message":
                 self.access_token = str(message["data"])
-                logger.debug(f"Received access token: {self.access_token[:10]}...")
+                logger.debug(f"Received access token: {self.access_token[:10]}...{self.access_token[-10:]}")
                 self.session.headers.update({"Authorization": f"Bearer {self.access_token}"})
-                break
 
     @property
     def can_trade(self: "SaxoClient") -> bool:
