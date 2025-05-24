@@ -79,7 +79,6 @@ def get_positions(saxo_client: SaxoClient = Provide[Container.saxo_client]):
             "status_code": 200,
         })
 
-    logger.debug("Received request method: %s", request.method)
     if request.method == "GET":
         return handle_GET()
     elif request.method == "OPTIONS":

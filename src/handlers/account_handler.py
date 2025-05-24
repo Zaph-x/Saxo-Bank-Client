@@ -96,7 +96,6 @@ class AccountHandler(HandlerBase):
         response.raise_for_status()
         json = response.json()
         data = json["Data"]
-        logger.info(f"Data: {data}")
         if json.get("__next", None):
             next_url = json.get("__next")
             data += get_next_page(next_url)
