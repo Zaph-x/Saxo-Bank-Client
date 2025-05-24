@@ -1,6 +1,9 @@
-from objects.client_configuration import ClientConfiguration
+from dependency_injector.wiring import inject, Provide
+from saxo_client import SaxoClient
+from container import Container
 import argparse
 import logging
+import os
 from flask import Flask
 
 logger = logging.getLogger(__name__)
@@ -40,13 +43,21 @@ def parse_args():
     return parser.parse_args()
 
 
-def create_app():
+@inject
+def create_client(saxo_client: SaxoClient = Provide[Container.saxo_client]):
+    """Create a SaxoClient instance."""
+    saxo_client.set_up_handlers()
+    return saxo_client
+
+def create_app(args):
     """Create a Flask application."""
     from container import Container
     from urls import register_blueprints
     container = Container()
-    container.init_resources()
-    container.wire(modules=["routes.trade", "routes.account"])
+    container.config.redis_host.from_env("REDIS_HOST", args.redis_host)
+    container.config.redis_port.from_env("REDIS_PORT", args.redis_port)
+    container.config.redis_db.from_env("REDIS_DB", args.redis_db)
+    container.wire(modules=["routes.trade", "routes.account", __name__])
     logger.debug("Wired container with routes")
     logger.debug(f"Container: {container}")
     app = Flask(__name__)
@@ -60,13 +71,7 @@ def create_app():
 
 if __name__ == "__main__":
     args = parse_args()
-    logging.basicConfig(level=args.loglevel.upper())
-
-    ClientConfiguration.set_redis_host(args.redis_host)
-    ClientConfiguration.set_redis_port(args.redis_port)
-    ClientConfiguration.set_redis_db(args.redis_db)
-    logger.debug("Client configuration set from command line arguments")
-    
+    logging.basicConfig(level=os.getenv("LOGLEVEL", args.loglevel).upper())
 
     if args.interactive:
         from saxo_client import SaxoClient
@@ -79,6 +84,7 @@ if __name__ == "__main__":
         )
         breakpoint()
 
-    app = create_app()
+    app = create_app(args)
 
+    client = create_client()
     app.run(debug=args.loglevel.upper() == "DEBUG", host="0.0.0.0", port=5000)

@@ -9,4 +9,4 @@ RUN uv sync --locked --no-dev
 
 ADD src/ /app
 
-CMD ["uv", "run", "--no-dev", "main.py", "--redis-host", "redis", "--redis-port", "6379", "--redis-db", "0"]
+CMD ["uv", "run", "--no-dev", "main.py"]
