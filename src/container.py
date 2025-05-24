@@ -8,13 +8,15 @@ logger = logging.getLogger(__name__)
 
 class Container(containers.DeclarativeContainer):
     """Dependency Injection Container for the application."""
+    # Configuration
+    config = providers.Configuration()
 
     # Redis client
     redis_client = providers.Singleton(
         StrictRedis,
-        host=ClientConfiguration.get_redis_host(),
-        port=ClientConfiguration.get_redis_port(),
-        db=ClientConfiguration.get_redis_db(),
+        host=config.redis_host,
+        port=config.redis_port,
+        db=config.redis_db,
         decode_responses=True,
         encoding="utf-8",
     )
