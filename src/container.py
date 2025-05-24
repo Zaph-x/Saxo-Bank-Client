@@ -1,5 +1,4 @@
 from dependency_injector import containers, providers
-from objects.client_configuration import ClientConfiguration
 from saxo_client import SaxoClient
 from redis import StrictRedis
 import logging
