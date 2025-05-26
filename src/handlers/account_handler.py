@@ -2,6 +2,7 @@ from handlers.handler_base import HandlerBase
 from handlers.user_handler import UserHandler
 from data_models.balance_information import BalanceInformation
 from data_models.saxo.position import PositionModel
+from data_models.saxo.historical_position import HistoricalPosition
 from requests import Session
 import logging
 
@@ -39,6 +40,7 @@ class AccountHandler(HandlerBase):
         url = f"{self.base_url}/port/v1/accounts/{self._account_key}"
         response = self.session.get(url)
         response.raise_for_status()
+        logger.debug("Account info response: %s", response.text)
         return response.json()
 
     def get_account_balance(self) -> BalanceInformation:
@@ -51,6 +53,7 @@ class AccountHandler(HandlerBase):
         url = f"{self.base_url}/port/v1/balances?AccountKey={self._account_key}&ClientKey={self._client_key}"
         response = self.session.get(url)
         response.raise_for_status()
+        logger.debug("Account balance response: %s", response.text)
         return BalanceInformation(response.json()).cash_balance
 
     def get_account_balance_information(self) -> BalanceInformation:
@@ -63,6 +66,7 @@ class AccountHandler(HandlerBase):
         url = f"{self.base_url}/port/v1/balances?AccountKey={self._account_key}&ClientKey={self._client_key}"
         response = self.session.get(url)
         response.raise_for_status()
+        logger.debug("Account balance information response: %s", response.text)
         return BalanceInformation(response.json())
 
     def get_account_positions(self) -> list:
@@ -85,6 +89,7 @@ class AccountHandler(HandlerBase):
             """
             response = self.session.get(url)
             response.raise_for_status()
+            logger.debug("Account positions next page response: %s", response.text)
             data: list = response.json()["Data"]
             if response.json().get("__next", None):
                 next_url = response.json()["__next"]
@@ -94,9 +99,27 @@ class AccountHandler(HandlerBase):
 
         response = self.session.get(url)
         response.raise_for_status()
+        logger.debug("Account positions response: %s", response.text)
         json = response.json()
         data = json["Data"]
         if json.get("__next", None):
             next_url = json.get("__next")
             data += get_next_page(next_url)
         return [PositionModel(item) for item in data]
+
+    def get_historical_positions(self) -> list:
+        """
+        Retrieves historical positions for the account.
+
+        Args:
+            start (str): The start date in ISO format.
+            end (str): The end date in ISO format.
+
+        Returns:
+            list: The historical positions.
+        """
+        url = f"{self.base_url}/port/v1/closedpositions?AccountKey={self._account_key}&ClientKey={self._client_key}&StandardPeriod=Year"
+        response = self.session.get(url)
+        response.raise_for_status()
+        logger.debug("Historical positions response: %s", response.text)
+        return [HistoricalPosition(item) for item in response.json()["Data"]]

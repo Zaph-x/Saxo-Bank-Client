@@ -3,7 +3,6 @@ from data_models.order.order_type import OrderType
 from data_models.order.order_duration import OrderDuration
 from data_models.trading.trade_direction import TradeDirection
 
-
 class OrderInformation:
     def __init__(self, data: dict):
         """
@@ -25,6 +24,28 @@ class OrderInformation:
         self.trade_direction = TradeDirection(data.get("BuySell", ""))
         self.duration = OrderDuration(data.get("Duration", dict()).get("DurationType", ""))
         self.price = data.get("Price", 0)
+
+    def to_json(self) -> dict:
+        """
+        Converts the OrderInformation object to a JSON serializable dictionary.
+
+        Returns:
+            dict: A dictionary representation of the order information.
+        """
+        return {
+            "order_id": self.order_id,
+            "amount": self.amount,
+            "friendly_name": self.friendly_name,
+            "symbol": self.symbol,
+            "order_type": self.order_type.value,
+            "order_relation": self.order_relation,
+            "uic": self.uic,
+            "asset_type": self.asset_type,
+            "order_time": self.order_time.isoformat(),
+            "trade_direction": self.trade_direction.value,
+            "duration": self.duration.value,
+            "price": self.price
+        }
 
     def __str__(self):
         """

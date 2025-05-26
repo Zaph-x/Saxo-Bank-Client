@@ -11,7 +11,7 @@ class PlaceRelatedOrOcoOrderModel(JsonModelBase):
             "Amount": {"type": "number"},
             "AssetType": {"type": "string"},
             "BuySell": {"enum": ["Buy", "Sell"]},
-            "OrderDuration": {"type": "object", "properties": {"OrderDurationType": {"type": "string", "enum": []}}},
+            "OrderDuration": {"type": "object", "properties": {"OrderDurationType": {"type": "string", "enum": ["DayOrder", "GoodTillCancel", "ImmediateOrCancel", "FillOrKill"]}}},
             "OrderType": {"type": "string"},
             "OrderPrice": {"type": "number"},
             "Uic": {"type": "number"},

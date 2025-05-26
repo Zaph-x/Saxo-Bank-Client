@@ -59,7 +59,7 @@ class MarketOrderTradePayload(JsonModelBase):
             "sl_tp": {"type": "object"},
             "algo_name": {"type": "string"},
         },
-        "required": ["symbol", "quantity", "side", "sl_tp"],
+        "required": ["symbol", "quantity","asset_type", "side", "sl_tp"],
     }
 
     def __init__(

@@ -26,7 +26,7 @@ def get_balance(saxo_client: SaxoClient = Provide[Container.saxo_client]):
             abort(403, "Account handler is not available.")
 
         balance = saxo_client.account_handler.get_account_balance_information()
-        if not balance:
+        if balance is None:
             abort(404, "Account balance not found.")
 
         return humps.decamelize({
@@ -65,8 +65,12 @@ def get_positions(saxo_client: SaxoClient = Provide[Container.saxo_client]):
             abort(403, "Account handler is not available.")
 
         positions = saxo_client.account_handler.get_account_positions()
-        if not positions:
+        if positions is None:
             abort(404, "Account positions not found.")
+
+        historical_positions = saxo_client.account_handler.get_historical_positions()
+        if historical_positions is None:
+            abort(404, "Historical positions not found.")
 
         # Assuming positions is a list of dictionaries
         pos = [pos.to_json() for pos in positions]
@@ -75,6 +79,10 @@ def get_positions(saxo_client: SaxoClient = Provide[Container.saxo_client]):
             "positions": {
                 "positions": pos,
                 "count": len(pos),
+            },
+            "historical_positions": {
+                "positions": [pos.to_json() for pos in historical_positions],
+                "count": len(historical_positions),
             },
             "status_code": 200,
         })

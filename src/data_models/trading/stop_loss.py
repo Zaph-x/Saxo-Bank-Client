@@ -11,11 +11,12 @@ class StopLoss(JsonModelBase):
         "properties": {
             "type": {"type": "string", "enum": ["pip", "percent", "price"]},
             "price": {"type": "number", "minimum": 0},
+            "is_trailing": {"type": "boolean", "default": False},
         },
         "required": ["type", "price"],
     }
 
-    def __init__(self, type: PriceType | str, price: float):
+    def __init__(self, type: PriceType | str, price: float, is_trailing: bool = False):
         """
         Initialize the StopLoss object.
 
@@ -25,6 +26,7 @@ class StopLoss(JsonModelBase):
         """
         self.type = PriceType(type) if isinstance(type, str) else type
         self.price = price
+        self.is_trailing = is_trailing
 
     def calculate_price(self):
         """

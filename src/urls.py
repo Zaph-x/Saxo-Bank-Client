@@ -4,8 +4,8 @@ from routes import account
 
 trade_bp = Blueprint("trade", __name__, url_prefix="/trade")
 trade_bp.add_url_rule("/market_order", view_func=trade.create_market_order, methods=["POST", "GET", "INFO", "OPTIONS"])  # type: ignore
+trade_bp.add_url_rule("/orders", view_func=trade.get_orders, methods=["GET", "OPTIONS"])  # type: ignore
 
-position_bp = Blueprint("position", __name__, url_prefix="/position")
 
 account_bp = Blueprint("account", __name__, url_prefix="/account")
 account_bp.add_url_rule("/balance", view_func=account.get_balance, methods=["GET", "OPTIONS"])  # type: ignore
@@ -17,7 +17,6 @@ def register_blueprints(app):
     Register all blueprints with the Flask app.
     """
     app.register_blueprint(trade_bp)
-    app.register_blueprint(position_bp)
     app.register_blueprint(account_bp)
 
     def handle_error(message, status_code):

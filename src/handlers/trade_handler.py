@@ -34,6 +34,8 @@ class TradeHandler(HandlerBase):
         """
         url = f"{self.base_url}/trade/v2/orders"
         response = self.session.post(url, json=order_payload)
+        logger.debug(f"Placing order with payload: {order_payload}")
+        logger.debug(f"Response status code: {response.status_code}")
         if not response.ok:
             raise Exception(f"Failed to place order: {response.status_code} {response.json()}")
         if response.ok:
@@ -54,20 +56,25 @@ class TradeHandler(HandlerBase):
             dict: The response from the API.
         """
 
+        logger.debug("Getting UIC for the market order.")
         uic = self.get_uic(
             symbol=market_order_payload.symbol,
             asset_type=AssetType(market_order_payload.asset_type),
         )
+        logger.debug(f"UIC for {market_order_payload.symbol} is {uic}.")
+        logger.debug("Retrieving price information for the asset.")
         price_info = self.get_price_for_assets([uic], AssetType(market_order_payload.asset_type))[0]
+        logger.debug(f"Price information for {market_order_payload.symbol}: {price_info}")
 
+        logger.debug("Creating order payload for the market order.")
         stop_loss_order_payload = self.create_order_payload(
             uic=uic,
             asset_type=AssetType(market_order_payload.asset_type),
             amount=market_order_payload.quantity,
-            order_type=OrderType.TrailingStop,
+            order_type=OrderType.TrailingStop if market_order_payload.sl_tp.stop_loss.is_trailing else OrderType.Stop,
             direction=TradeDirection.SELL,
             price=calculate_stop_loss(price_info, market_order_payload),
-            order_duration=OrderDuration.GoodTillDate,
+            order_duration=OrderDuration.GoodTillCancel,
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
         )
         take_profit_order_payload = self.create_order_payload(
@@ -77,7 +84,7 @@ class TradeHandler(HandlerBase):
             order_type=OrderType.Limit,
             direction=TradeDirection.SELL,
             price=calculate_take_profit(price_info, market_order_payload),
-            order_duration=OrderDuration.GoodTillDate,
+            order_duration=OrderDuration.GoodTillCancel,
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
         )
         order_payload = self.create_order_payload(
@@ -93,6 +100,7 @@ class TradeHandler(HandlerBase):
             order_duration=OrderDuration.DayOrder,
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
         )
+        logger.debug(f"Order payload created: {order_payload}")
 
         logger.info(f"Placing market order for {market_order_payload.quantity} units of {uic} at market price.")
         return self._place_order(order_payload)
@@ -157,6 +165,7 @@ class TradeHandler(HandlerBase):
         reference_id: str = "",
         trailing_stop_step: Optional[float] = None,
         trailing_distance_to_market: Optional[float] = None,
+        reference_price_info: Optional[PriceInfo] = None,
     ) -> dict:
         """
         Creates a payload for the order.
@@ -192,11 +201,14 @@ class TradeHandler(HandlerBase):
 
         if order_type == OrderType.TrailingStop:
             if trailing_stop_step is None or trailing_distance_to_market is None:
-                raise ValueError("Trailing stop step and distance to market must be provided for TrailingStop orders.")
+                trailing_stop_step = 0.01  # Default step if not provided
+                trailing_distance_to_market = 0.01  # Default distance if not provided
             order["TrailingStopStep"] = trailing_stop_step
             order["TrailingDistanceToMarket"] = trailing_distance_to_market
         if reference_id:
             order["ExternalReference"] = reference_id
+        if order_duration == OrderDuration.GoodTillDate and not good_till_date:
+            raise ValueError("good_till_date must be provided for GoodTillDate order duration.")
         if order_duration == OrderDuration.GoodTillDate and good_till_date:
             order["OrderDuration"]["GoodTillDate"] = good_till_date.strftime("%Y-%m-%dT%H:%M:%S")
 
