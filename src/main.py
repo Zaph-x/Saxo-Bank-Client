@@ -8,6 +8,28 @@ from flask import Flask
 
 logger = logging.getLogger(__name__)
 
+class CustomFormatter(logging.Formatter):
+
+    grey = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+    format_str = "%(asctime)s|%(name)s|%(levelname)s|%(message)s|%(filename)s:%(lineno)d"
+
+    FORMATS = {
+        logging.DEBUG: grey + format_str + reset,
+        logging.INFO: grey + format_str + reset,
+        logging.WARNING: yellow + format_str + reset,
+        logging.ERROR: red + format_str + reset,
+        logging.CRITICAL: bold_red + format_str + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Saxo API Client")
     parser.add_argument(
@@ -26,7 +48,7 @@ def parse_args():
         "--redis-host",
         type=str,
         help="Redis host. This overrides the config file setting and will fetch the token data from Redis.",
-        default="redis",
+        default="localhost",
     )
     parser.add_argument(
         "--redis-port",
@@ -71,7 +93,9 @@ def create_app(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    logging.basicConfig(level=os.getenv("LOGLEVEL", args.loglevel).upper())
+    sh = logging.StreamHandler()
+    sh.setFormatter(CustomFormatter())
+    logging.basicConfig(level=os.getenv("LOGLEVEL", args.loglevel).upper(), handlers=[sh])
 
     if args.interactive:
         from saxo_client import SaxoClient

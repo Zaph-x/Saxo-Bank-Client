@@ -1,7 +1,7 @@
 from data_models.price.price_info import PriceInfo
 from data_models.trade_payload import MarketOrderTradePayload, LimitOrderTradePayload
 from data_models.price.price_type import PriceType
-from utils.number_utils import round_decimal_to_nearest_x
+from utils.number_utils import round_decimal_to_nearest_x, round_decimal_to_nearest_tick
 
 tick_size_map = {
     0.4999: 0.0001,
@@ -33,7 +33,7 @@ def get_tick_size(price: float) -> float:
     return 0.0001
 
 
-def calculate_pip_price(self, price_info: PriceInfo, pips: int) -> float:
+def calculate_pip_price(price_info: PriceInfo, pips: int) -> float:
     """
     Calculate the pip price for a given price info and number of pips.
 
@@ -61,6 +61,7 @@ def calculate_pip_price(self, price_info: PriceInfo, pips: int) -> float:
 def calculate_take_profit(
     price_info: PriceInfo,
     order_payload: MarketOrderTradePayload | LimitOrderTradePayload,
+    increment: float = 10.0,
 ) -> float:
     """
     Calculate the take profit price based on the order payload and price information.
@@ -68,6 +69,7 @@ def calculate_take_profit(
     Args:
         price_info (PriceInfo): The price information of the asset.
         order_payload (MarketOrderTradePayload | LimitOrderTradePayload): The order payload.
+        increment (float): The increment value to adjust the take profit price.
 
     Returns:
         float: The calculated take profit price.
@@ -80,9 +82,9 @@ def calculate_take_profit(
         if take_profit.type == PriceType.PIP:
             raise NotImplementedError("PIP calculation is not implemented.")
         elif take_profit.type == PriceType.PRICE:
-            take_profit_price = take_profit.price
+            take_profit_price = round_decimal_to_nearest_tick(take_profit.price, .1/increment, 4)
         elif take_profit.type == PriceType.PERCENT:
-            take_profit_price = price_info.ask * (1 + take_profit.price / 100)
+            take_profit_price = round_decimal_to_nearest_tick(price_info.ask * (1 + take_profit.price / 100), increment, 4)
         else:
             raise ValueError(f"Invalid take profit type: {take_profit.type}")
     elif order_payload.side == "short":
@@ -91,7 +93,7 @@ def calculate_take_profit(
         elif take_profit.type == PriceType.PRICE:
             take_profit_price = take_profit.price
         elif take_profit.type == PriceType.PERCENT:
-            take_profit_price = price_info.bid * (1 - take_profit.price / 100)
+            take_profit_price = round_decimal_to_nearest_tick(price_info.ask * (1 - take_profit.price / 100), increment, 4)
         else:
             raise ValueError(f"Invalid take profit type: {take_profit.type}")
     else:
@@ -104,6 +106,7 @@ def calculate_take_profit(
 def calculate_stop_loss(
     price_info: PriceInfo,
     order_payload: MarketOrderTradePayload | LimitOrderTradePayload,
+    increment: float = 10.0,
 ) -> float:
     """
     Calculate the stop loss price based on the order payload and price information.
@@ -111,6 +114,7 @@ def calculate_stop_loss(
     Args:
         price_info (PriceInfo): The price information of the asset.
         order_payload (MarketOrderTradePayload | LimitOrderTradePayload): The order payload.
+        increment (float): The increment value to adjust the stop loss price.
 
     Returns:
         float: The calculated stop loss price.
@@ -123,9 +127,9 @@ def calculate_stop_loss(
         if stop_loss.type == PriceType.PIP:
             raise NotImplementedError("PIP calculation is not implemented.")
         elif stop_loss.type == PriceType.PRICE:
-            stop_loss_price = stop_loss.price
+            stop_loss_price = round_decimal_to_nearest_tick(stop_loss.price, .1/increment, 4)
         elif stop_loss.type == PriceType.PERCENT:
-            stop_loss_price = price_info.ask * (1 - stop_loss.price / 100)
+            stop_loss_price = round_decimal_to_nearest_tick(price_info.ask * (1 - stop_loss.price / 100), .1/increment, 4)
         else:
             raise ValueError(f"Invalid stop loss type: {stop_loss.type}")
     elif order_payload.side == "short":
@@ -134,7 +138,7 @@ def calculate_stop_loss(
         elif stop_loss.type == PriceType.PRICE:
             stop_loss_price = stop_loss.price
         elif stop_loss.type == PriceType.PERCENT:
-            stop_loss_price = price_info.bid * (1 + stop_loss.price / 100)
+            stop_loss_price = round_decimal_to_nearest_tick(price_info.ask * (1 + stop_loss.price / 100), .1/increment, 4)
         else:
             raise ValueError(f"Invalid stop loss type: {stop_loss.type}")
     else:

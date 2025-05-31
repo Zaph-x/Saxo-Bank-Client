@@ -9,12 +9,12 @@ from data_models.price.price_info import PriceInfo
 from handlers.user_handler import UserHandler
 from typing import List
 from datetime import datetime
-from logging import Logger
+import logging
 from data_models.trade_payload import MarketOrderTradePayload
 from typing import Optional
 from utils.price import calculate_stop_loss, calculate_take_profit
 
-logger = Logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class TradeHandler(HandlerBase):
@@ -38,9 +38,10 @@ class TradeHandler(HandlerBase):
         logger.debug(f"Response status code: {response.status_code}")
         if not response.ok:
             raise Exception(f"Failed to place order: {response.status_code} {response.json()}")
+        data = response.json()
         if response.ok:
-            logger.debug(f"Order placed successfully: {response.json()}")
-        return response.json()
+            logger.debug(f"Order placed successfully: {data}")
+        return data
 
     def place_market_order(
         self,
@@ -63,7 +64,9 @@ class TradeHandler(HandlerBase):
         )
         logger.debug(f"UIC for {market_order_payload.symbol} is {uic}.")
         logger.debug("Retrieving price information for the asset.")
-        price_info = self.get_price_for_assets([uic], AssetType(market_order_payload.asset_type))[0]
+        price_info = self.get_price_info_for_assets([uic], AssetType(market_order_payload.asset_type))[0]
+        increment_size = self.get_price_increment_for_asset(uic, AssetType(market_order_payload.asset_type))
+        logger.debug(f"Price increment size for {market_order_payload.symbol} is {increment_size}.")
         logger.debug(f"Price information for {market_order_payload.symbol}: {price_info}")
 
         logger.debug("Creating order payload for the market order.")
@@ -73,7 +76,7 @@ class TradeHandler(HandlerBase):
             amount=market_order_payload.quantity,
             order_type=OrderType.TrailingStop if market_order_payload.sl_tp.stop_loss.is_trailing else OrderType.Stop,
             direction=TradeDirection.SELL,
-            price=calculate_stop_loss(price_info, market_order_payload),
+            price=calculate_stop_loss(price_info, market_order_payload, increment_size),
             order_duration=OrderDuration.GoodTillCancel,
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
         )
@@ -83,7 +86,7 @@ class TradeHandler(HandlerBase):
             amount=market_order_payload.quantity,
             order_type=OrderType.Limit,
             direction=TradeDirection.SELL,
-            price=calculate_take_profit(price_info, market_order_payload),
+            price=calculate_take_profit(price_info, market_order_payload, increment_size),
             order_duration=OrderDuration.GoodTillCancel,
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
         )
@@ -99,9 +102,9 @@ class TradeHandler(HandlerBase):
             ],
             order_duration=OrderDuration.DayOrder,
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
+            order_relation="StandAlone",
         )
         logger.debug(f"Order payload created: {order_payload}")
-
         logger.info(f"Placing market order for {market_order_payload.quantity} units of {uic} at market price.")
         return self._place_order(order_payload)
 
@@ -161,11 +164,12 @@ class TradeHandler(HandlerBase):
         order_duration: OrderDuration = OrderDuration.DayOrder,
         related_orders: List[dict] | List[str] = [],
         good_till_date: Optional[datetime] = None,
-        with_client_advice: bool = False,
+        with_client_advice: bool = True,
         reference_id: str = "",
         trailing_stop_step: Optional[float] = None,
         trailing_distance_to_market: Optional[float] = None,
         reference_price_info: Optional[PriceInfo] = None,
+        order_relation: Optional[str] = None,
     ) -> dict:
         """
         Creates a payload for the order.
@@ -198,6 +202,8 @@ class TradeHandler(HandlerBase):
             order["Orders"] = related_orders
         if order_type != OrderType.Market:
             order["OrderPrice"] = price
+        if order_relation:
+            order["OrderRelation"] = order_relation
 
         if order_type == OrderType.TrailingStop:
             if trailing_stop_step is None or trailing_distance_to_market is None:
@@ -246,7 +252,30 @@ class TradeHandler(HandlerBase):
                 raise ValueError(f"Multiple UICs found for symbol {symbol} and asset type {asset_type}.")
         return data["Data"][0]["Identifier"]
 
-    def get_price_for_assets(
+    def get_price_increment_for_asset(
+        self,
+        uic: int,
+        asset_type: AssetType,
+    ) -> float:
+        """
+        Retrieves the price increment for a given asset.
+
+        Args:
+            uic (int): The UIC of the asset.
+            asset_type (AssetType): The type of asset being traded.
+
+        Returns:
+            float: The price increment of the asset.
+        """
+        url = f"{self.base_url}/ref/v1/instruments/details/{uic}/{asset_type.value}?AccountKey={self.user_handler.default_account_key}&ClientKey={self.user_handler.client_key}"
+        response = self.session.get(url)
+        response.raise_for_status()
+        data = response.json()
+        if not "IncrementSize" in data:
+            raise ValueError(f"No data found for UIC {uic} and asset type {asset_type}.")
+        return data["IncrementSize"]
+
+    def get_price_info_for_assets(
         self,
         uic: List[int],
         asset_type: AssetType,

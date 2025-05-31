@@ -55,7 +55,7 @@ def test_calculate_take_profit_calculates_correct_price(bid, ask, price, expecte
 
     order = MarketOrderTradePayload.from_json(json.loads(json_payload))
 
-    result = calculate_take_profit(price_info, order)
+    result = calculate_take_profit(price_info, order, 10)
     assert result == expected, f"Expected {expected}, but got {result} for price {price} with bid {bid} and ask {ask}"
 
 
@@ -189,7 +189,7 @@ def test_calculate_stop_loss_calculates_correct_price_for_percentages(bid, ask, 
 
     order = MarketOrderTradePayload.from_json(json.loads(json_payload))
 
-    result = calculate_stop_loss(price_info, order)
+    result = calculate_stop_loss(price_info, order, 10)
     assert result == expected, f"Expected {expected}, but got {result}"
 
 

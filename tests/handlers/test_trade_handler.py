@@ -115,7 +115,7 @@ class TestTradeHandler:
             "Amount": 100000,
             "ManualOrder": False,
             "OrderDuration": {"DurationType": "DayOrder"},
-            "WithAdvice": False,
+            "WithAdvice": True,
             "OrderPrice": 1.15,
             "ExternalReference": "ref123"
         }
@@ -206,8 +206,11 @@ class TestTradeHandler:
         mock_price_info.ask = 1.15
         mock_price_info.bid = 1.14
         
-        # Update trade_handler.get_price_for_assets to return our proper mock
-        trade_handler.get_price_for_assets = Mock(return_value=[mock_price_info])
+        # Update trade_handler.get_price_info_for_assets to return our proper mock
+        trade_handler.get_price_info_for_assets = Mock(return_value=[mock_price_info])
+        
+        # Mock get_price_increment_for_asset to return a valid increment size
+        trade_handler.get_price_increment_for_asset = Mock(return_value=0.0001)
         
         # Mock the create_order_payload to avoid the TrailingStop order parameter validation
         original_create_order_payload = trade_handler.create_order_payload

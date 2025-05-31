@@ -66,7 +66,7 @@ def create_market_order(saxo_client: SaxoClient = Provide[Container.saxo_client]
             return {"status": "error", "message": "An unexpected error occurred.", "status_code": 500}
 
     if request.method == "POST":
-        handle_POST()
+        return handle_POST()
     elif request.method == "OPTIONS":
         return {
             "status": "success",

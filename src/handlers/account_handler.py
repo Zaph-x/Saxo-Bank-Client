@@ -69,6 +69,27 @@ class AccountHandler(HandlerBase):
         logger.debug("Account balance information response: %s", response.text)
         return BalanceInformation(response.json())
 
+    def _get_next_page(self, url: str) -> list:
+        """
+        Helper function to get the next page of results.
+
+        Args:
+            url (str): The URL to fetch the next page from.
+
+        Returns:
+            dict: The response JSON.
+        """
+        response = self.session.get(url)
+        response.raise_for_status()
+        logger.debug("Account positions next page response: %s", response.text)
+        data: list = response.json()["Data"]
+        if response.json().get("__next", None):
+            next_url = response.json()["__next"]
+            return data + self._get_next_page(next_url)
+
+        return data
+
+
     def get_account_positions(self) -> list:
         """
         Retrieves the account positions.
@@ -77,34 +98,15 @@ class AccountHandler(HandlerBase):
             dict: The account positions.
         """
         url = f"{self.base_url}/port/v1/positions?AccountKey={self._account_key}&ClientKey={self._client_key}"
-        def get_next_page(url: str) -> list:
-            """
-            Helper function to get the next page of results.
-
-            Args:
-                url (str): The URL to fetch the next page from.
-
-            Returns:
-                dict: The response JSON.
-            """
-            response = self.session.get(url)
-            response.raise_for_status()
-            logger.debug("Account positions next page response: %s", response.text)
-            data: list = response.json()["Data"]
-            if response.json().get("__next", None):
-                next_url = response.json()["__next"]
-                return data + get_next_page(next_url)
-
-            return data
-
+        
         response = self.session.get(url)
         response.raise_for_status()
         logger.debug("Account positions response: %s", response.text)
         json = response.json()
-        data = json["Data"]
+        data = json.get("Data", [])
         if json.get("__next", None):
             next_url = json.get("__next")
-            data += get_next_page(next_url)
+            data += self._get_next_page(next_url)
         return [PositionModel(item) for item in data]
 
     def get_historical_positions(self) -> list:
@@ -121,5 +123,10 @@ class AccountHandler(HandlerBase):
         url = f"{self.base_url}/port/v1/closedpositions?AccountKey={self._account_key}&ClientKey={self._client_key}&StandardPeriod=Year"
         response = self.session.get(url)
         response.raise_for_status()
-        logger.debug("Historical positions response: %s", response.text)
-        return [HistoricalPosition(item) for item in response.json()["Data"]]
+        logger.debug("Response: %s", response.text)
+        json = response.json()
+        if isinstance(json, list):
+            logger.warning("Received a list instead of a dict while getting historical positions - returning empty list.")
+            return []
+        logger.debug("Historical positions response: %s", json)
+        return [HistoricalPosition(item) for item in json.get("Data", [])]

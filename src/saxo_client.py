@@ -5,6 +5,7 @@ import os
 from handlers.user_handler import UserHandler
 from handlers.account_handler import AccountHandler
 from handlers.trade_handler import TradeHandler
+from handlers.price_handler import PriceHandler
 from data_models.response_models import UserModel
 from redis import Redis
 from redis.client import PubSub
@@ -19,6 +20,7 @@ class SaxoClient:
     """
 
     user_handler: Optional[UserHandler] = None
+    price_handler: Optional[PriceHandler] = None
     redis_channel: str = "oauth_access_token"
     access_token: Optional[str] = None
 
@@ -38,7 +40,7 @@ class SaxoClient:
         self.set_up_handlers()
 
     def set_up_handlers(self: "SaxoClient") -> None:
-        """This method sets up the user, account, and trade handlers.
+        """This method sets up the user, account, trade, and price handlers.
         It should be called after the user is authenticated.
 
         Example:
@@ -47,6 +49,7 @@ class SaxoClient:
         self.user_handler = UserHandler(self.session, self.base_url)
         self.account_handler = AccountHandler(self.session, self.base_url, self.user_handler)
         self.trade_handler = TradeHandler(self.user_handler, self.session, self.base_url)
+        self.price_handler = PriceHandler(self.user_handler, self.session, self.base_url)
 
     def set_token(self: "SaxoClient", token: str) -> None:
         """This method sets the access token for the session.
