@@ -29,7 +29,7 @@ def mock_user_handler():
 
 @pytest.fixture
 def price_handler(mock_session, mock_user_handler):
-    return PriceHandler(mock_user_handler, mock_session, "https://test-api.saxobank.com")
+    return PriceHandler(mock_user_handler, mock_session, "https://test-api.saxobank.com", "TF_TEST")
 
 
 def test_get_uic_for_symbol_success(price_handler, mock_session):
@@ -39,7 +39,8 @@ def test_get_uic_for_symbol_success(price_handler, mock_session):
         "Data": [
             {
                 "Identifier": 12345,
-                "Symbol": "AAPL"
+                "Symbol": "AAPL",
+                "AssetType": "Stock"
             }
         ]
     }
@@ -64,11 +65,13 @@ def test_get_uic_for_symbol_multiple_results(price_handler, mock_session):
         "Data": [
             {
                 "Identifier": 12345,
-                "Symbol": "AAPL"
+                "Symbol": "AAPL",
+                "AssetType": "Stock"
             },
             {
                 "Identifier": 67890,
-                "Symbol": "AAPL.OTC"
+                "Symbol": "AAPL.OTC",
+                "AssetType": "Stock"
             }
         ]
     }
@@ -212,7 +215,7 @@ def test_get_price_increment_for_asset(price_handler, mock_session, mock_user_ha
     # Mock response for price increment
     mock_response = MagicMock()
     mock_response.json.return_value = {
-        "IncrementSize": 0.01
+            "TickSizeScheme": {'Elements': [{'HighPrice': 100000, 'TickSize': 0.01}]}
     }
     mock_response.raise_for_status = MagicMock()
     mock_session.get.return_value = mock_response
@@ -221,7 +224,7 @@ def test_get_price_increment_for_asset(price_handler, mock_session, mock_user_ha
     increment = price_handler.get_price_increment_for_asset(12345, AssetType.Stock)
     
     # Verify the result
-    assert increment == 0.01
+    assert increment == [{'HighPrice': 100000, 'TickSize': 0.01}]
     
     # Verify the mock was called with the expected URL
     expected_url = (

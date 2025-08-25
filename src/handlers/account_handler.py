@@ -5,6 +5,7 @@ from data_models.saxo.position import PositionModel
 from data_models.saxo.historical_position import HistoricalPosition
 from requests import Session
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +25,22 @@ class AccountHandler(HandlerBase):
         super().__init__(session, base_url)
         self.base_url = base_url
         self.user_handler = user_handler
+        if self.has_multiple_accounts:
+            logger.warning("Multiple accounts detected, using default account key: %s", self.user_handler.default_account_key)
+
         self._account_key = self.user_handler.default_account_key
         self._client_key = self.user_handler.client_key
+
+    @property
+    def has_multiple_accounts(self) -> bool:
+        """
+        Checks if the user has multiple accounts.
+
+        Returns:
+            bool: True if the user has multiple accounts, False otherwise.
+        """
+        accounts = self.session.get(f"{self.base_url}/port/v1/accounts")
+        return len(accounts.json()['Data']) > 1
 
     def get_account_info(self) -> dict:
         """
@@ -130,3 +145,16 @@ class AccountHandler(HandlerBase):
             return []
         logger.debug("Historical positions response: %s", json)
         return [HistoricalPosition(item) for item in json.get("Data", [])]
+
+    def reset_account_balance(self) -> None:
+        """
+        Resets the account balance to 100000.
+        """
+        if os.getenv("ENVIRONMENT") != "development":
+            raise Exception("Resetting account balance is only allowed in development environment")
+        url = f"{self.base_url}/port/v1/accounts/{self._account_key}/reset"
+        response = self.session.put(url, json={"NewBalance": 100000})
+        response.raise_for_status()
+        logger.debug("Account balance reset response: %s", response.text)
+        if response.status_code != 204:
+            raise Exception("Failed to reset account balance")

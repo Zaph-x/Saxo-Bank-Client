@@ -41,3 +41,9 @@ class TakeProfit(JsonModelBase):
             return self.price
         else:
             raise ValueError(f"Invalid price type: {self.type}")
+
+    def __str__(self):
+        return f"TakeProfit(type={self.type}, price={self.price})"
+
+    def __repr__(self):
+        return self.__str__()

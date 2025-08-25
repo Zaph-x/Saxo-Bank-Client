@@ -6,10 +6,13 @@ from handlers.user_handler import UserHandler
 from handlers.account_handler import AccountHandler
 from handlers.trade_handler import TradeHandler
 from handlers.price_handler import PriceHandler
+from handlers.subscription_handler import SubscriptionHandler
 from data_models.response_models import UserModel
 from redis import Redis
 from redis.client import PubSub
 import threading
+from streaming.upstream import Upstream
+from streaming.clients import clients
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +26,7 @@ class SaxoClient:
     price_handler: Optional[PriceHandler] = None
     redis_channel: str = "oauth_access_token"
     access_token: Optional[str] = None
+    context_id: Optional[str] = None
 
     def __init__(self: "SaxoClient", redis: Redis, interactive: bool = False) -> None:
         self.base_url = os.getenv("BASE_URL", "https://gateway.saxobank.com/sim/openapi")
@@ -37,7 +41,18 @@ class SaxoClient:
         self.redis_thread.daemon = True
         self.redis_thread.start()
         self.set_token(str(redis.get(self.redis_channel)))
+        self.context_id = os.getenv("CONTEXT_ID", "default_context") # Default context ID for local development. TF_DEV for development, TF_PROD for production
         self.set_up_handlers()
+        self.subscription_handler.remove_active_price_subscriptions(self.context_id)
+        upstream = Upstream(
+            url=os.getenv("STREAM_URL", "wss://streaming.saxobank.com/sim/openapi/streamingws/connect"),
+            token=str(self.access_token),
+            context_id=self.context_id,
+            clients=clients,
+        )
+        upstream.start()
+        self.subscription_handler.resubscribe_all_price_subscriptions(self.context_id)
+
 
     def set_up_handlers(self: "SaxoClient") -> None:
         """This method sets up the user, account, trade, and price handlers.
@@ -48,8 +63,9 @@ class SaxoClient:
         """
         self.user_handler = UserHandler(self.session, self.base_url)
         self.account_handler = AccountHandler(self.session, self.base_url, self.user_handler)
-        self.trade_handler = TradeHandler(self.user_handler, self.session, self.base_url)
-        self.price_handler = PriceHandler(self.user_handler, self.session, self.base_url)
+        self.price_handler = PriceHandler(self.user_handler, self.session, self.base_url, str(self.context_id))
+        self.trade_handler = TradeHandler(self.user_handler, self.price_handler, self.session, self.base_url)
+        self.subscription_handler = SubscriptionHandler(self.price_handler, self.user_handler, self.base_url, self.session)
 
     def set_token(self: "SaxoClient", token: str) -> None:
         """This method sets the access token for the session.

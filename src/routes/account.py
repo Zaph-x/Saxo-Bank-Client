@@ -47,6 +47,79 @@ def get_balance(saxo_client: SaxoClient = Provide[Container.saxo_client]):
         }
 
 @inject
+def get_account_info(saxo_client: SaxoClient = Provide[Container.saxo_client]):
+    """
+    Get the account information.
+
+    Returns:
+        dict: A dictionary containing account information details.
+    """
+
+    # Placeholder for account info retrieval logic
+    def handle_GET():
+        """
+        Handle GET request for retrieving account information.
+        """
+
+        if not saxo_client.account_handler:
+            abort(403, "Account handler is not available.")
+
+        account_info = saxo_client.account_handler.get_account_info()
+        if account_info is None:
+            abort(404, "Account information not found.")
+
+        return humps.decamelize({
+            "status": "success",
+            "account_info": account_info,
+            "status_code": 200,
+        })
+
+    if request.method == "GET":
+        return handle_GET()
+    elif request.method == "OPTIONS":
+        return {
+            "status": "success",
+            "allowed_methods": "GET, OPTIONS",
+            "message": "CORS preflight response",
+            "status_code": 200,
+        }
+
+@inject
+def reset_account(saxo_client: SaxoClient = Provide[Container.saxo_client]):
+    """
+    Reset the account.
+
+    Returns:
+        dict: A dictionary containing the status of the reset operation.
+    """
+
+    # Placeholder for account reset logic
+    def handle_POST():
+        """
+        Handle POST request for resetting the account.
+        """
+
+        if not saxo_client.account_handler:
+            abort(403, "Account handler is not available.")
+
+        saxo_client.account_handler.reset_account_balance()
+        return {
+            "status": "success",
+            "message": "Account balance has been reset successfully.",
+            "status_code": 200,
+        }
+
+    if request.method == "POST":
+        return handle_POST()
+    elif request.method == "OPTIONS":
+        return {
+            "status": "success",
+            "allowed_methods": "POST, OPTIONS",
+            "message": "CORS preflight response",
+            "status_code": 200,
+        }
+
+@inject
 def get_positions(saxo_client: SaxoClient = Provide[Container.saxo_client]):
     """
     Get the account positions.

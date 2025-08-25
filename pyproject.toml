@@ -6,13 +6,17 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "dependency-injector>=4.46.0",
+    "eventlet>=0.40.2",
     "flask>=3.1.0",
+    "flask-sock>=0.7.0",
     "jsonschema>=4.23.0",
+    "psycopg2>=2.9.10",
     "pyhumps>=3.8.0",
     "python-dateutil>=2.9.0.post0",
     "python-dotenv>=1.0.1",
     "redis[hiredis]>=5.2.1",
     "requests>=2.32.3",
+    "websocket-client>=1.8.0",
     "websockets>=14.2",
 ]
 

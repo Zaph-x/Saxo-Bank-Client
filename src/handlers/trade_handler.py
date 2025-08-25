@@ -7,6 +7,7 @@ from data_models.order.order_information import OrderInformation
 from data_models.order.order_duration import OrderDuration
 from data_models.price.price_info import PriceInfo
 from handlers.user_handler import UserHandler
+from handlers.price_handler import PriceHandler
 from typing import List
 from datetime import datetime
 import logging
@@ -18,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class TradeHandler(HandlerBase):
-    def __init__(self, user_handler: UserHandler, session: Session, base_url: str) -> None:
+    def __init__(self, user_handler: UserHandler, price_handler: PriceHandler, session: Session, base_url: str) -> None:
         super().__init__(session, base_url)
         self.user_handler = user_handler
+        self.price_handler = price_handler
 
     def _place_order(self, order_payload: dict) -> dict:
         """
@@ -64,9 +66,13 @@ class TradeHandler(HandlerBase):
         )
         logger.debug(f"UIC for {market_order_payload.symbol} is {uic}.")
         logger.debug("Retrieving price information for the asset.")
-        price_info = self.get_price_info_for_assets([uic], AssetType(market_order_payload.asset_type))[0]
-        increment_size = self.get_price_increment_for_asset(uic, AssetType(market_order_payload.asset_type))
-        logger.debug(f"Price increment size for {market_order_payload.symbol} is {increment_size}.")
+        price_info = self.price_handler.get_price_info_for_assets([uic], AssetType(market_order_payload.asset_type))[0]
+        tick_size = self.price_handler.get_tick_size(price_info.ask, price_info.uic, AssetType(market_order_payload.asset_type))
+
+        if tick_size is None or tick_size <= 0:
+            raise ValueError(f"Tick size must be above 0: {tick_size}")
+
+        logger.debug(f"Price increment size for {market_order_payload.symbol} is {tick_size}.")
         logger.debug(f"Price information for {market_order_payload.symbol}: {price_info}")
 
         logger.debug("Creating order payload for the market order.")
@@ -76,7 +82,7 @@ class TradeHandler(HandlerBase):
             amount=market_order_payload.quantity,
             order_type=OrderType.TrailingStop if market_order_payload.sl_tp.stop_loss.is_trailing else OrderType.Stop,
             direction=TradeDirection.SELL,
-            price=calculate_stop_loss(price_info, market_order_payload, increment_size),
+            price=calculate_stop_loss(price_info, market_order_payload, tick_size),
             order_duration=OrderDuration.GoodTillCancel,
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
         )
@@ -86,7 +92,7 @@ class TradeHandler(HandlerBase):
             amount=market_order_payload.quantity,
             order_type=OrderType.Limit,
             direction=TradeDirection.SELL,
-            price=calculate_take_profit(price_info, market_order_payload, increment_size),
+            price=calculate_take_profit(price_info, market_order_payload, tick_size),
             order_duration=OrderDuration.GoodTillCancel,
             reference_id=market_order_payload.algo_name if market_order_payload.algo_name else "",
         )
@@ -251,52 +257,6 @@ class TradeHandler(HandlerBase):
                     logger.warning(f"UIC: {itm['Uic']}, Symbol: {itm['Symbol']}")
                 raise ValueError(f"Multiple UICs found for symbol {symbol} and asset type {asset_type}.")
         return data["Data"][0]["Identifier"]
-
-    def get_price_increment_for_asset(
-        self,
-        uic: int,
-        asset_type: AssetType,
-    ) -> float:
-        """
-        Retrieves the price increment for a given asset.
-
-        Args:
-            uic (int): The UIC of the asset.
-            asset_type (AssetType): The type of asset being traded.
-
-        Returns:
-            float: The price increment of the asset.
-        """
-        url = f"{self.base_url}/ref/v1/instruments/details/{uic}/{asset_type.value}?AccountKey={self.user_handler.default_account_key}&ClientKey={self.user_handler.client_key}"
-        response = self.session.get(url)
-        response.raise_for_status()
-        data = response.json()
-        if not "IncrementSize" in data:
-            raise ValueError(f"No data found for UIC {uic} and asset type {asset_type}.")
-        return data["IncrementSize"]
-
-    def get_price_info_for_assets(
-        self,
-        uic: List[int],
-        asset_type: AssetType,
-    ) -> List[PriceInfo]:
-        """
-        Retrieves the price for a given asset or a list of assets.
-
-        Args:
-            uic (List[int]): The UIC(s) of the asset(s).
-            asset_type (AssetType): The type of asset being traded.
-
-        Returns:
-            List[PriceInfo]: The list of price information of the asset(s).
-        """
-        url = f"{self.base_url}/trade/v1/infoprices/list?AccountKey={self.user_handler.default_account_key}&Amount=1000&Uics={','.join(map(str, uic))}&AssetType={asset_type.value}&FieldGroups=DisplayAndFormat,Quote"
-        response = self.session.get(url)
-        response.raise_for_status()
-        data = response.json()
-        if not data.get("Data"):
-            raise ValueError(f"No data found for UIC {uic} and asset type {asset_type}.")
-        return [PriceInfo(price) for price in data["Data"]]
 
     def buy_market_sl_tp(
         self,

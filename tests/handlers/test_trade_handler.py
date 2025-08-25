@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 from requests import Session, Response
 from handlers.trade_handler import TradeHandler
 from handlers.user_handler import UserHandler
+from handlers.price_handler import PriceHandler
 from data_models.trading.trade_direction import TradeDirection
 from data_models.order.order_type import OrderType
 from data_models.trading.asset_type import AssetType
@@ -29,15 +30,35 @@ class TestTradeHandler:
         user_handler.default_account_key = "account123"
         user_handler.client_key = "client456"
         return user_handler
+
+    @pytest.fixture
+    def mock_price_handler(self, mock_session, mock_user_handler):
+        """Create a mock PriceHandler."""
+        price_handler = Mock(spec=PriceHandler)
+        # mock the get_price_info_for_assets method to return a PriceInfo object
+        price_handler.get_price_info_for_assets = Mock(return_value=[PriceInfo({
+            "Quote": {"Bid": 1.15, "Ask": 1.16, "Mid": 1.155, "DelayedByMinutes": 0, "MarketState": "Open"},
+            "LastUpdated": "2023-10-01T12:00:00.000Z",
+            "AssetType": AssetType.FxSpot,
+            "Uic": 12345,
+            "DisplayAndFormat": {
+                "Symbol": "EUR/USD",
+                "OrderDecimals": 5,
+                "Format": "AllowDecimalPips",
+                "Currency": "USD",
+            },
+        })])
+        price_handler.get_uic = Mock(return_value=12345)
+        price_handler.get_price_increment_for_asset = Mock(return_value=0.0001)
+        return price_handler
     
     @pytest.fixture
-    def trade_handler(self, mock_session, mock_user_handler):
+    def trade_handler(self, mock_session, mock_user_handler, mock_price_handler):
         """Create a TradeHandler instance with mock dependencies."""
         base_url = "https://api.example.com"
-        handler = TradeHandler(mock_user_handler, mock_session, base_url)
+        handler = TradeHandler(mock_user_handler, mock_price_handler, mock_session, base_url)
         # Mock the get_uic and get_price_for_assets methods that are used in other tests
         handler.get_uic = Mock(return_value=12345)
-        handler.get_price_for_assets = Mock(return_value=[Mock(ask_price=1.15, bid_price=1.14)])
         return handler
 
     def test_place_order(self, trade_handler, mock_session):
@@ -205,9 +226,10 @@ class TestTradeHandler:
         mock_price_info = Mock(spec=PriceInfo)
         mock_price_info.ask = 1.15
         mock_price_info.bid = 1.14
+
+        trade_handler.price_handler.get_tick_size = Mock(return_value=0.0001)
         
         # Update trade_handler.get_price_info_for_assets to return our proper mock
-        trade_handler.get_price_info_for_assets = Mock(return_value=[mock_price_info])
         
         # Mock get_price_increment_for_asset to return a valid increment size
         trade_handler.get_price_increment_for_asset = Mock(return_value=0.0001)

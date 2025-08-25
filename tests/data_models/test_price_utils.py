@@ -55,7 +55,7 @@ def test_calculate_take_profit_calculates_correct_price(bid, ask, price, expecte
 
     order = MarketOrderTradePayload.from_json(json.loads(json_payload))
 
-    result = calculate_take_profit(price_info, order, 10)
+    result = calculate_take_profit(price_info, order, .0001)
     assert result == expected, f"Expected {expected}, but got {result} for price {price} with bid {bid} and ask {ask}"
 
 
@@ -90,7 +90,7 @@ def test_calculate_take_profit_calculates_correct_price_for_percentages(bid, ask
 
     order = MarketOrderTradePayload.from_json(json.loads(json_payload))
 
-    result = calculate_take_profit(price_info, order)
+    result = calculate_take_profit(price_info, order, .1)
     assert result == expected, f"Expected {expected}, but got {result} for price {price} with bid {bid} and ask {ask}"
 
 
@@ -127,7 +127,7 @@ def test_calculate_take_profit_cannot_calculate_for_negative_or_zero_price(bid, 
     )
 
     with pytest.raises(ValueError) as excinfo:
-        calculate_take_profit(price_info, order)
+        calculate_take_profit(price_info, order,1)
     assert str(excinfo.value) == f"Take profit price must be above 0: {price}"
 
 
@@ -158,7 +158,7 @@ def test_calculate_stop_loss_calculates_correct_price(bid, ask, price, expected)
 
     order = MarketOrderTradePayload.from_json(json.loads(json_payload))
 
-    result = calculate_stop_loss(price_info, order)
+    result = calculate_stop_loss(price_info, order, .1)
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
@@ -189,7 +189,7 @@ def test_calculate_stop_loss_calculates_correct_price_for_percentages(bid, ask, 
 
     order = MarketOrderTradePayload.from_json(json.loads(json_payload))
 
-    result = calculate_stop_loss(price_info, order, 10)
+    result = calculate_stop_loss(price_info, order, .01)
     assert result == expected, f"Expected {expected}, but got {result}"
 
 
@@ -226,5 +226,5 @@ def test_calculate_stop_loss_cannot_calculate_for_negative_or_zero_price(bid, as
     )
 
     with pytest.raises(ValueError) as excinfo:
-        calculate_stop_loss(price_info, order)
+        calculate_stop_loss(price_info, order, .1)
     assert str(excinfo.value) == f"Stop loss price must be above 0: {price}"

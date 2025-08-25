@@ -32,6 +32,11 @@ class StopLossTakeProfitPayload(JsonModelBase):
         self.stop_loss = StopLoss.from_json(stop_loss) if isinstance(stop_loss, dict) else stop_loss
         self.take_profit = TakeProfit.from_json(take_profit) if isinstance(take_profit, dict) else take_profit
 
+    def __str__(self):
+        return f"StopLossTakeProfitPayload(stop_loss={self.stop_loss}, take_profit={self.take_profit})"
+
+    def __repr__(self):
+        return self.__str__()
 
 class MarketOrderTradePayload(JsonModelBase):
     """
@@ -79,6 +84,12 @@ class MarketOrderTradePayload(JsonModelBase):
         self.sl_tp = (
             StopLossTakeProfitPayload.from_json(sl_tp) if isinstance(sl_tp, str) or isinstance(sl_tp, dict) else sl_tp
         )
+
+    def __str__(self):
+        return f"MarketOrderTradePayload(symbol={self.symbol}, quantity={self.quantity}, side={self.side}, sl_tp={self.sl_tp})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class LimitOrderTradePayload(JsonModelBase):
@@ -132,3 +143,9 @@ class LimitOrderTradePayload(JsonModelBase):
         )
         self.limit_price = limit_price
         self.algo_name = algo_name
+
+    def __str__(self):
+        return f"LimitOrderTradePayload(symbol={self.symbol}, quantity={self.quantity}, side={self.side}, sl_tp={self.sl_tp}, limit_price={self.limit_price})"
+
+    def __repr__(self):
+        return self.__str__()

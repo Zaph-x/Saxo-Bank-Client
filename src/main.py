@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch(all=True)
+
 from dependency_injector.wiring import inject, Provide
 from saxo_client import SaxoClient
 from container import Container
@@ -5,8 +8,14 @@ import argparse
 import logging
 import os
 from flask import Flask
+from dotenv import load_dotenv
+from utils.database import Database
+from streaming.clients import clients
+from streaming.upstream import Upstream
 
+load_dotenv()
 logger = logging.getLogger(__name__)
+
 
 class CustomFormatter(logging.Formatter):
 
@@ -14,11 +23,12 @@ class CustomFormatter(logging.Formatter):
     yellow = "\x1b[33;20m"
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
+    blue = "\x1b[34;20m"
     reset = "\x1b[0m"
     format_str = "%(asctime)s|%(name)s|%(levelname)s|%(message)s|%(filename)s:%(lineno)d"
 
     FORMATS = {
-        logging.DEBUG: grey + format_str + reset,
+        logging.DEBUG: blue + format_str + reset,
         logging.INFO: grey + format_str + reset,
         logging.WARNING: yellow + format_str + reset,
         logging.ERROR: red + format_str + reset,
@@ -79,7 +89,7 @@ def create_app(args):
     container.config.redis_host.from_env("REDIS_HOST", args.redis_host)
     container.config.redis_port.from_env("REDIS_PORT", args.redis_port)
     container.config.redis_db.from_env("REDIS_DB", args.redis_db)
-    container.wire(modules=["routes.trade", "routes.account", __name__])
+    container.wire(modules=["routes.trade", "routes.account", "routes.price", "routes.subscription", __name__])
     logger.debug("Wired container with routes")
     logger.debug(f"Container: {container}")
     app = Flask(__name__)
@@ -96,7 +106,8 @@ if __name__ == "__main__":
     sh = logging.StreamHandler()
     sh.setFormatter(CustomFormatter())
     logging.basicConfig(level=os.getenv("LOGLEVEL", args.loglevel).upper(), handlers=[sh])
-
+    Database.setup()
+    
     if args.interactive:
         from saxo_client import SaxoClient
         from redis import StrictRedis
@@ -111,4 +122,4 @@ if __name__ == "__main__":
     app = create_app(args)
 
     client = create_client()
-    app.run(debug=args.loglevel.upper() == "DEBUG", host="0.0.0.0", port=5000)
+    app.run(debug=args.loglevel.upper() == "DEBUG", use_reloader=False, host="0.0.0.0", port=5000)

@@ -70,30 +70,10 @@ def create_market_order(saxo_client: SaxoClient = Provide[Container.saxo_client]
     elif request.method == "OPTIONS":
         return {
             "status": "success",
-            "allowed_methods": "POST, INFO, OPTIONS",
+            "allowed_methods": "POST, OPTIONS",
             "message": "CORS preflight response",
             "status_code": 200,
         }
-    elif request.method == "INFO":
-        # Explain GET and POST methods with example payloads
-        return {
-            "status": "success",
-            "allowed_methods": "POST, GET, OPTIONS",
-            "message": "GET and POST methods explained with example payloads",
-            "post_example": {
-                "payload": {
-                    "symbol": "XAUUSD",
-                    "asset_type": "FxSpot",
-                    "quantity": 10,
-                    "side": "long",
-                    "sl_tp": {"sl": {"price": 50, "type": "pip"}, "tp": {"price": 100, "type": "pip"}},
-                },
-                "response": {"order_id": "123456"},
-                "description": "Create a market order for 10 units of XAUUSD with a stop loss of 50 pips and take profit of 100 pips.",
-            },
-            "status_code": 200,
-        }
-        pass
 
 @inject
 def get_orders(saxo_client: SaxoClient = Provide[Container.saxo_client]):

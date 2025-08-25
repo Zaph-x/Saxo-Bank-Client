@@ -55,3 +55,9 @@ class StopLoss(JsonModelBase):
             raise ValueError("Invalid price. Must be a number.")
         if self.type not in [PriceType.PIP, PriceType.PERCENT, PriceType.PRICE]:
             raise ValueError(f"Invalid price type: {self.type}")
+
+    def __str__(self):
+        return f"StopLoss(type={self.type}, price={self.price}, is_trailing={self.is_trailing})"
+
+    def __repr__(self):
+        return self.__str__()

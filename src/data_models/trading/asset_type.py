@@ -75,3 +75,10 @@ class AssetType(Enum):
     WarrantOpenEndKnockOut = "WarrantOpenEndKnockOut"
     WarrantOtherLeverageWithKnockOut = "WarrantOtherLeverageWithKnockOut"
     WarrantSpread = "WarrantSpread"
+
+    @classmethod
+    def _missing_(cls, value):
+        for member in cls:
+            if member.value.lower() == str(value).lower():
+                return member
+

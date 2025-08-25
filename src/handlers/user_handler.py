@@ -1,6 +1,7 @@
 from requests import Session
 from data_models.response_models import UserModel
 from handlers.handler_base import HandlerBase
+import os
 
 
 class UserHandler(HandlerBase):
@@ -29,6 +30,8 @@ class UserHandler(HandlerBase):
 
     @property
     def default_account_key(self) -> str:
+        if os.getenv("DEFAULT_ACCOUNT_KEY", None):
+            return os.getenv("DEFAULT_ACCOUNT_KEY", '')
         if self.client_info:
             return self.client_info["DefaultAccountKey"]
         self._get_client_info()

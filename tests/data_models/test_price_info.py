@@ -37,7 +37,7 @@ def test_price_info_initialization():
     assert price_info.uic == 123456
     assert price_info.symbol == "AAPL"
     assert price_info.order_decimals == 2
-    assert price_info.allow_decimal_pips == False
+    assert price_info.allow_decimal_pips is False
     assert price_info.currency == "USD"
     assert isinstance(price_info.last_update, datetime)
     assert price_info.last_update.year == 2025
@@ -128,7 +128,7 @@ def test_to_json():
     assert json_data["uic"] == 987654
     assert json_data["symbol"] == "MSFT"
     assert json_data["order_decimals"] == 2
-    assert json_data["allow_decimal_pips"] == False
+    assert json_data["allow_decimal_pips"] is False
     assert json_data["currency"] == "USD"
     assert "last_update" in json_data
     # Check that last_update is a valid ISO formatted string
